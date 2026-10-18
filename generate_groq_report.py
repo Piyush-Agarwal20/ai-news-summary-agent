@@ -251,6 +251,12 @@ def write_atomic(path: Path, content: str) -> None:
     temporary.replace(path)
 
 
+def render_index() -> str:
+    dates = sorted((p.stem for p in (ROOT / 'reports').glob('*.html')), reverse=True)
+    links = ''.join(f'<li><a href="reports/{html.escape(date)}.html">{html.escape(date)}</a></li>' for date in dates)
+    return f'<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AI Digests</title></head><body style="font:16px system-ui;max-width:800px;margin:40px auto;padding:0 20px"><h1>AI Digests</h1><p>Daily article reports from Google Alerts, summarized with Groq.</p><p><a href="latest.html">Open latest report</a></p><h2>Archive</h2><ul>{links}</ul></body></html>'
+
+
 def send_first_to_telegram(item: dict, chat_id: str, bot_token: str) -> None:
     lessons = '\n'.join(f'- {lesson}' for lesson in item['lessons'])
     message = (f"<b>{html.escape(item['title'])}</b>\n\n"
@@ -306,6 +312,7 @@ def main() -> int:
         return 1
     write_atomic(out, report)
     write_atomic(ROOT / 'latest.html', report)
+    write_atomic(ROOT / 'index.html', render_index())
     if args.telegram_first:
         chat_id = os.getenv('TELEGRAM_CHAT_ID')
         bot_token = os.getenv('TELEGRAM_BOT_TOKEN')
